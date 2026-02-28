@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>English Reader — 英文解説アプリ</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300&family=Noto+Serif+JP:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink: #1a1209;
+    --paper: #f5f0e8;
+    --paper-dark: #ede8dc;
+    --accent: #8b2500;
+    --accent-light: #c4430a;
+    --gold: #b8860b;
+    --muted: #7a6e5f;
+    --border: #d4cbbf;
+    --panel-bg: #faf7f2;
+  }
+
+  body {
+    font-family: 'Source Serif 4', Georgia, serif;
+    background: var(--paper);
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 0;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: 
+      repeating-linear-gradient(transparent, transparent 27px, rgba(180,160,120,0.12) 28px),
+      radial-gradient(ellipse at 20% 0%, rgba(200,180,140,0.3) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 100%, rgba(180,160,120,0.2) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .masthead {
+    text-align: center;
+    padding: 40px 20px 24px;
+    border-bottom: 2px solid var(--ink);
+    position: relative;
+    z-index: 1;
+  }
+
+  .masthead-line {
+    font-size: 11px;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 300;
+    margin-bottom: 8px;
+  }
+
+  .masthead h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(36px, 6vw, 64px);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    color: var(--ink);
+  }
+
+  .masthead h1 em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  .masthead-sub {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 10px;
+    font-weight: 300;
+    letter-spacing: 0.05em;
+  }
+
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 20px auto;
+    max-width: 300px;
+  }
+
+  .divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--ink);
+  }
+
+  .divider-ornament {
+    font-size: 18px;
+    color: var(--accent);
+  }
+
+  .main {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* INPUT SECTION */
+  .input-section {
+    margin-bottom: 48px;
+  }
+
+  .section-label {
+    font-family: 'Playfair Display', serif;
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  textarea {
+    width: 100%;
+    min-height: 200px;
+    padding: 20px 24px;
+    font-family: 'Source Serif 4', serif;
+    font-size: 16px;
+    line-height: 1.75;
+    color: var(--ink);
+    background: var(--panel-bg);
+    border: 1px solid var(--border);
+    border-top: 3px solid var(--accent);
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    font-weight: 300;
+  }
+
+  textarea:focus {
+    border-color: var(--accent-light);
+    box-shadow: 0 0 0 3px rgba(139, 37, 0, 0.08);
+  }
+
+  textarea::placeholder {
+    color: var(--muted);
+    font-style: italic;
+    font-size: 15px;
+  }
+
+  .btn-analyze {
+    margin-top: 16px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    padding: 14px 32px;
+    font-family: 'Playfair Display', serif;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-analyze::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--accent);
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+  }
+
+  .btn-analyze:hover::before { transform: translateX(0); }
+  .btn-analyze span { position: relative; z-index: 1; }
+  .btn-analyze:active { transform: translateY(1px); }
+
+  .btn-clear {
+    margin-top: 16px;
+    margin-left: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    padding: 14px 24px;
+    font-family: 'Source Serif 4', serif;
+    font-size: 13px;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s;
+  }
+
+  .btn-clear:hover { color: var(--accent); border-color: var(--accent); }
+
+  /* ARTICLE VIEW */
+  .article-section { display: none; }
+  .article-section.visible { display: block; }
+
+  .article-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .para-count {
+    font-size: 12px;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .paragraph-block {
+    margin-bottom: 32px;
+    position: relative;
+  }
+
+  .paragraph-wrapper {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+  }
+
+  .para-number {
+    font-family: 'Playfair Display', serif;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.2em;
+    min-width: 28px;
+    padding-top: 6px;
+    text-align: right;
+    opacity: 0.7;
+  }
+
+  .para-text {
+    flex: 1;
+    font-size: 17px;
+    line-height: 1.85;
+    color: var(--ink);
+    font-weight: 300;
+    padding: 16px 20px;
+    background: var(--panel-bg);
+    border-left: 3px solid var(--border);
+    transition: border-color 0.2s, background 0.2s;
+  }
+
+  .paragraph-block.active .para-text {
+    border-left-color: var(--accent);
+    background: #fff;
+  }
+
+  .btn-explain {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+    margin-left: 44px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 7px 18px;
+    font-family: 'Noto Serif JP', serif;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+
+  .btn-explain:hover {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+  }
+
+  .btn-explain.loading {
+    color: var(--muted);
+    border-style: dashed;
+    pointer-events: none;
+    animation: pulse 1.2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  /* EXPLANATION PANEL */
+  .explanation-panel {
+    margin-top: 16px;
+    margin-left: 44px;
+    background: white;
+    border: 1px solid var(--border);
+    border-top: 3px solid var(--accent);
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height 0.4s ease, opacity 0.3s ease;
+    opacity: 0;
+  }
+
+  .explanation-panel.open {
+    max-height: 2000px;
+    opacity: 1;
+  }
+
+  .explanation-inner {
+    padding: 28px 28px 24px;
+  }
+
+  .exp-section {
+    margin-bottom: 24px;
+  }
+
+  .exp-section:last-child { margin-bottom: 0; }
+
+  .exp-heading {
+    font-family: 'Playfair Display', serif;
+    font-size: 10px;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .exp-heading::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--paper-dark);
+  }
+
+  .exp-heading-icon {
+    width: 20px;
+    height: 20px;
+    background: var(--accent);
+    color: white;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    flex-shrink: 0;
+  }
+
+  .exp-content {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 14.5px;
+    line-height: 1.95;
+    color: #2a2018;
+    font-weight: 300;
+  }
+
+  .exp-content p { margin-bottom: 8px; }
+
+  .grammar-item {
+    display: flex;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--paper-dark);
+  }
+
+  .grammar-item:last-child { border-bottom: none; }
+
+  .grammar-tag {
+    font-family: 'Source Serif 4', serif;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: white;
+    background: var(--gold);
+    padding: 2px 8px;
+    height: fit-content;
+    margin-top: 2px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .grammar-desc {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 14px;
+    line-height: 1.8;
+    color: #2a2018;
+    font-weight: 300;
+  }
+
+  .translation-box {
+    background: var(--paper);
+    border-left: 4px solid var(--gold);
+    padding: 16px 20px;
+    font-family: 'Noto Serif JP', serif;
+    font-size: 15.5px;
+    line-height: 2;
+    color: var(--ink);
+    font-weight: 400;
+  }
+
+  .error-msg {
+    color: var(--accent);
+    font-family: 'Noto Serif JP', serif;
+    font-size: 13px;
+    padding: 12px 16px;
+    border: 1px solid rgba(139,37,0,0.3);
+    background: rgba(139,37,0,0.04);
+  }
+
+  /* LOADING SPINNER */
+  .spinner {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Paragraph separator */
+  .para-sep {
+    width: 40px;
+    height: 1px;
+    background: var(--border);
+    margin: 0 auto 32px;
+  }
+
+  .hint {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 12px;
+    color: var(--muted);
+    text-align: center;
+    margin-top: 12px;
+    letter-spacing: 0.05em;
+  }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-line">AI-Powered English Learning</div>
+  <h1>English <em>Reader</em></h1>
+  <div class="masthead-sub">英文記事をパラグラフ単位で深く読み解く</div>
+  <div class="divider"><span class="divider-ornament">❧</span></div>
+</header>
+
+<main class="main">
+
+  <!-- INPUT -->
+  <section class="input-section" id="inputSection">
+    <div class="section-label">英文を貼り付ける</div>
+    <textarea id="articleInput" placeholder="英文記事をここに貼り付けてください。パラグラフごとに解説ボタンが表示されます。"></textarea>
+    <div>
+      <button class="btn-analyze" onclick="analyzeArticle()">
+        <span>▶ 記事を読み込む</span>
+      </button>
+      <button class="btn-clear" onclick="clearAll()">✕ クリア</button>
+    </div>
+    <p class="hint">Tip: 空行でパラグラフを区切ってください</p>
+  </section>
+
+  <!-- ARTICLE VIEW -->
+  <section class="article-section" id="articleSection">
+    <div class="article-meta">
+      <span class="section-label" style="margin:0">解説モード</span>
+      <span class="para-count" id="paraCount"></span>
+    </div>
+    <div id="paragraphsContainer"></div>
+    <button class="btn-clear" style="margin-top:16px" onclick="clearAll()">← 別の記事を読む</button>
+  </section>
+
+</main>
+
+<script>
+const API_URL = "https://api.anthropic.com/v1/messages";
+
+function analyzeArticle() {
+  const text = document.getElementById('articleInput').value.trim();
+  if (!text) return;
+
+  const paragraphs = text.split(/\n\s*\n/).map(p => p.trim()).filter(p => p.length > 30);
+  if (paragraphs.length === 0) {
+    alert('有効なパラグラフが見つかりませんでした。英文を貼り付けてください。');
+    return;
+  }
+
+  document.getElementById('inputSection').style.display = 'none';
+  const articleSection = document.getElementById('articleSection');
+  articleSection.classList.add('visible');
+  document.getElementById('paraCount').textContent = `${paragraphs.length} paragraphs`;
+
+  const container = document.getElementById('paragraphsContainer');
+  container.innerHTML = '';
+
+  paragraphs.forEach((para, idx) => {
+    const block = document.createElement('div');
+    block.className = 'paragraph-block';
+    block.id = `block-${idx}`;
+
+    block.innerHTML = `
+      <div class="paragraph-wrapper">
+        <div class="para-number">§${idx + 1}</div>
+        <div class="para-text">${escapeHtml(para)}</div>
+      </div>
+      <button class="btn-explain" id="btn-${idx}" onclick="explainParagraph(${idx}, this)">
+        <span class="btn-label">📖 このパラグラフを解説</span>
+      </button>
+      <div class="explanation-panel" id="panel-${idx}">
+        <div class="explanation-inner" id="inner-${idx}"></div>
+      </div>
+      <div class="para-sep"></div>
+    `;
+
+    container.appendChild(block);
+  });
+
+  window._paragraphs = paragraphs;
+}
+
+async function explainParagraph(idx, btn) {
+  const panel = document.getElementById(`panel-${idx}`);
+  const inner = document.getElementById(`inner-${idx}`);
+  const block = document.getElementById(`block-${idx}`);
+
+  // Toggle if already open
+  if (panel.classList.contains('open') && !btn.classList.contains('loading')) {
+    panel.classList.remove('open');
+    block.classList.remove('active');
+    btn.querySelector('.btn-label').textContent = '📖 このパラグラフを解説';
+    return;
+  }
+
+  // Already loaded — just reopen
+  if (inner.dataset.loaded === 'true') {
+    panel.classList.add('open');
+    block.classList.add('active');
+    return;
+  }
+
+  btn.classList.add('loading');
+  btn.querySelector('.btn-label').innerHTML = '<span class="spinner"></span> AIが解析中...';
+  block.classList.add('active');
+
+  const paragraph = window._paragraphs[idx];
+
+  const prompt = `あなたは英語教師です。以下の英文パラグラフを日本人学習者向けに詳しく解説してください。
+
+【英文】
+${paragraph}
+
+以下の形式で必ず返答してください（JSONで返さず、そのまま日本語で）：
+
+===和訳===
+自然で読みやすい日本語訳を書いてください。
+
+===構文解析===
+パラグラフの主要な文について、主語・動詞・目的語・修飾語などの構造を説明してください。複数の文がある場合は各文を分析してください。
+
+===英文法のポイント===
+このパラグラフで使われている重要な文法事項を3〜5点、具体的な例文箇所を引用しながら説明してください。各ポイントは「【文法名】：説明」の形式で書いてください。
+
+===語彙・表現===
+重要な単語・フレーズを3〜5個選び、意味と使い方を説明してください。`;
+
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+
+    const responseText = data.content.map(b => b.text || '').join('');
+    inner.innerHTML = renderExplanation(responseText);
+    inner.dataset.loaded = 'true';
+    panel.classList.add('open');
+
+  } catch (err) {
+    inner.innerHTML = `<div class="error-msg">⚠ エラーが発生しました: ${err.message}</div>`;
+    panel.classList.add('open');
+  }
+
+  btn.classList.remove('loading');
+  btn.querySelector('.btn-label').textContent = '✕ 閉じる';
+}
+
+function renderExplanation(text) {
+  const sections = [
+    { marker: '===和訳===', key: 'translation', icon: '訳', title: '和訳' },
+    { marker: '===構文解析===', key: 'syntax', icon: '構', title: '構文解析' },
+    { marker: '===英文法のポイント===', key: 'grammar', icon: '文', title: '英文法のポイント' },
+    { marker: '===語彙・表現===', key: 'vocab', icon: '語', title: '語彙・表現' },
+  ];
+
+  const parts = {};
+  sections.forEach((s, i) => {
+    const start = text.indexOf(s.marker);
+    if (start === -1) return;
+    const contentStart = start + s.marker.length;
+    const nextIdx = sections.slice(i + 1).map(ns => text.indexOf(ns.marker)).filter(x => x !== -1);
+    const end = nextIdx.length > 0 ? Math.min(...nextIdx) : text.length;
+    parts[s.key] = text.slice(contentStart, end).trim();
+  });
+
+  let html = '';
+
+  if (parts.translation) {
+    html += `
+      <div class="exp-section">
+        <div class="exp-heading"><span class="exp-heading-icon">訳</span>和訳</div>
+        <div class="translation-box">${nl2p(parts.translation)}</div>
+      </div>`;
+  }
+
+  if (parts.syntax) {
+    html += `
+      <div class="exp-section">
+        <div class="exp-heading"><span class="exp-heading-icon">構</span>構文解析</div>
+        <div class="exp-content">${nl2p(parts.syntax)}</div>
+      </div>`;
+  }
+
+  if (parts.grammar) {
+    const lines = parts.grammar.split('\n').filter(l => l.trim());
+    let grammarHtml = '';
+    lines.forEach(line => {
+      const m = line.match(/^【(.+?)】[：:]\s*(.+)/);
+      if (m) {
+        grammarHtml += `<div class="grammar-item"><span class="grammar-tag">${m[1]}</span><div class="grammar-desc">${m[2]}</div></div>`;
+      } else if (line.trim()) {
+        grammarHtml += `<div class="grammar-item"><div class="grammar-desc" style="padding-left:0">${line}</div></div>`;
+      }
+    });
+    html += `
+      <div class="exp-section">
+        <div class="exp-heading"><span class="exp-heading-icon">文</span>英文法のポイント</div>
+        <div>${grammarHtml}</div>
+      </div>`;
+  }
+
+  if (parts.vocab) {
+    html += `
+      <div class="exp-section">
+        <div class="exp-heading"><span class="exp-heading-icon">語</span>語彙・表現</div>
+        <div class="exp-content">${nl2p(parts.vocab)}</div>
+      </div>`;
+  }
+
+  return html || `<div class="exp-content">${nl2p(text)}</div>`;
+}
+
+function nl2p(text) {
+  return text.split('\n').filter(l => l.trim()).map(l => `<p>${escapeHtml(l)}</p>`).join('');
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function clearAll() {
+  document.getElementById('articleInput').value = '';
+  document.getElementById('articleSection').classList.remove('visible');
+  document.getElementById('inputSection').style.display = 'block';
+  document.getElementById('paragraphsContainer').innerHTML = '';
+  window._paragraphs = [];
+}
+</script>
+</body>
+</html>
