@@ -456,6 +456,85 @@
     margin-top: 12px;
     letter-spacing: 0.05em;
   }
+
+  /* API KEY SECTION */
+  .apikey-section {
+    margin-bottom: 36px;
+    background: var(--panel-bg);
+    border: 1px solid var(--border);
+    border-top: 3px solid var(--gold);
+    padding: 20px 24px;
+  }
+
+  .apikey-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-top: 12px;
+  }
+
+  .apikey-input {
+    flex: 1;
+    padding: 10px 14px;
+    font-family: 'Source Serif 4', serif;
+    font-size: 13px;
+    color: var(--ink);
+    background: white;
+    border: 1px solid var(--border);
+    outline: none;
+    letter-spacing: 0.03em;
+    transition: border-color 0.2s;
+    min-width: 0;
+  }
+
+  .apikey-input:focus { border-color: var(--gold); }
+
+  .apikey-input.saved {
+    border-color: #5a8a5a;
+    background: #f5faf5;
+    color: #2a5a2a;
+  }
+
+  .btn-save-key {
+    padding: 10px 20px;
+    background: var(--gold);
+    color: white;
+    border: none;
+    font-family: 'Noto Serif JP', serif;
+    font-size: 12px;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: opacity 0.2s;
+    flex-shrink: 0;
+  }
+
+  .btn-save-key:hover { opacity: 0.85; }
+
+  .apikey-status {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 12px;
+    margin-top: 8px;
+    min-height: 18px;
+  }
+
+  .apikey-status.ok { color: #5a8a5a; }
+  .apikey-status.err { color: var(--accent); }
+
+  .apikey-note {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 8px;
+    line-height: 1.7;
+  }
+
+  .apikey-note a {
+    color: var(--gold);
+    text-decoration: none;
+  }
+
+  .apikey-note a:hover { text-decoration: underline; }
 </style>
 </head>
 <body>
@@ -468,6 +547,20 @@
 </header>
 
 <main class="main">
+
+  <!-- API KEY -->
+  <section class="apikey-section" id="apikeySection">
+    <div class="section-label">APIキー設定</div>
+    <div class="apikey-note">
+      Anthropic APIキーを入力してください。キーは <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> で取得できます。<br>
+      入力したキーはこのブラウザにのみ保存され、外部に送信されません。
+    </div>
+    <div class="apikey-row">
+      <input type="password" class="apikey-input" id="apikeyInput" placeholder="sk-ant-..." />
+      <button class="btn-save-key" onclick="saveApiKey()">保存</button>
+    </div>
+    <div class="apikey-status" id="apikeyStatus"></div>
+  </section>
 
   <!-- INPUT -->
   <section class="input-section" id="inputSection">
@@ -496,6 +589,34 @@
 
 <script>
 const API_URL = "https://api.anthropic.com/v1/messages";
+
+// Load saved API key on startup
+window.addEventListener('DOMContentLoaded', () => {
+  const saved = localStorage.getItem('anthropic_api_key');
+  if (saved) {
+    document.getElementById('apikeyInput').value = saved;
+    document.getElementById('apikeyInput').classList.add('saved');
+    document.getElementById('apikeyStatus').textContent = '✓ APIキーが保存されています';
+    document.getElementById('apikeyStatus').className = 'apikey-status ok';
+  }
+});
+
+function saveApiKey() {
+  const key = document.getElementById('apikeyInput').value.trim();
+  if (!key.startsWith('sk-ant-')) {
+    document.getElementById('apikeyStatus').textContent = '⚠ 正しいAPIキーを入力してください（sk-ant- で始まります）';
+    document.getElementById('apikeyStatus').className = 'apikey-status err';
+    return;
+  }
+  localStorage.setItem('anthropic_api_key', key);
+  document.getElementById('apikeyInput').classList.add('saved');
+  document.getElementById('apikeyStatus').textContent = '✓ 保存しました！次回からも自動で読み込まれます';
+  document.getElementById('apikeyStatus').className = 'apikey-status ok';
+}
+
+function getApiKey() {
+  return localStorage.getItem('anthropic_api_key') || document.getElementById('apikeyInput').value.trim();
+}
 
 function analyzeArticle() {
   const text = document.getElementById('articleInput').value.trim();
@@ -586,9 +707,18 @@ ${paragraph}
 重要な単語・フレーズを3〜5個選び、意味と使い方を説明してください。`;
 
   try {
+    const apiKey = getApiKey();
+    if (!apiKey) {
+      throw new Error('APIキーが設定されていません。上のAPIキー欄に入力してください。');
+    }
     const res = await fetch(API_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 1000,
